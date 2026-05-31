@@ -97,12 +97,12 @@ pub fn parse_expr(tokens: &mut TokenIter, min_precedence: u8) -> Expr {
 }
 
 
-pub fn parse_stmt(tokens: TokenIter) -> Vec<Stmt> {
-    while let Some(token) = tokens.peek() {
-        let stmt = match token {
-            &Token::Keyword(keyword) => match keyword {
-                Keyword::Let => Stmt::Let { variable: tokens.next(), expr: () }
-            }
-        };
-    };
-}
+// pub fn parse_stmt(tokens: TokenIter) -> Vec<Stmt> {
+//     while let Some(token) = tokens.peek() {
+//         let stmt = match token {
+//             &Token::Keyword(keyword) => match keyword {
+//                 Keyword::Let => Stmt::Let { variable: tokens.next(), expr: () }
+//             }
+//         };
+//     };
+// }
