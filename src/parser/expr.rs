@@ -121,7 +121,7 @@ fn parse_expr_with_precedence(iter: &mut TokenIter, min_precedence: u8) -> Expr 
 
     while let Some(token) = iter.peek() {
         if token == &Token::Punctuator(Punctuator::LParen)
-        || token == &Token::Punctuator(Punctuator::RParen)
+            || token == &Token::Punctuator(Punctuator::RParen)
         {
             break;
         };
@@ -142,6 +142,6 @@ fn parse_expr_with_precedence(iter: &mut TokenIter, min_precedence: u8) -> Expr 
     left
 }
 
-pub fn parse_expr(tokens: Vec<Token>) -> Expr {
-    parse_expr_with_precedence(&mut tokens.into_iter().peekable(), 0)
+pub fn parse_expr(iter: &mut TokenIter) -> Expr {
+    parse_expr_with_precedence(iter, 0)
 }

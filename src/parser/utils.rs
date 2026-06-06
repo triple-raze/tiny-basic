@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use std::vec::IntoIter;
 
-use crate::token::{Literal, Punctuator, Token};
+use crate::token::{Punctuator, Token};
 
 pub type TokenIter = Peekable<IntoIter<Token>>;
 

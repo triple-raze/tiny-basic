@@ -1,5 +1,4 @@
-use crate::token::{InequalityOp, Literal, MathOp, Token};
-use either::Either;
+use crate::token::{Literal, MathOp};
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {

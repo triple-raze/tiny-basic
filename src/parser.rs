@@ -1,6 +1,6 @@
 mod expr;
+mod parse;
 mod stmt;
 mod utils;
-mod parse;
 
 pub use parse::parse;

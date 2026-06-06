@@ -3,26 +3,12 @@ use std::array;
 use crate::ast::{Expr, Stmt};
 use crate::parser::expr::parse_expr;
 use crate::parser::utils::{TokenIter, is_expr_token};
-use crate::token::{Keyword, Literal, Token, Punctuator};
-
-fn take_expr_tokens(iter: &mut TokenIter) -> Vec<Token> {
-    let mut expr_tokens = Vec::new();
-
-    while let Some(token) = iter.peek() {
-        if is_expr_token(token) {
-            expr_tokens.push(iter.next().unwrap());
-        } else {
-            break;
-        }
-    };
-
-    expr_tokens
-}
+use crate::token::{Keyword, Literal, Punctuator, Token};
 
 fn parse_let_stmt(iter: &mut TokenIter) -> Stmt {
     let tokens: [Token; 3] = array::from_fn(|_| iter.next().unwrap());
 
-    let expr: Expr = parse_expr(take_expr_tokens(iter));
+    let expr: Expr = parse_expr(iter);
 
     match tokens {
         [Token::Keyword(Keyword::Let), Token::Ident(name), Token::Eq] => Stmt::Let {
@@ -43,10 +29,10 @@ fn parse_let_stmt(iter: &mut TokenIter) -> Stmt {
 
 fn parse_if_stmt(iter: &mut TokenIter) -> Stmt {
     let first = iter.next().unwrap();
-    let condition = parse_expr(take_expr_tokens(iter));
+    let condition = parse_expr(iter);
 
     let second = iter.next().unwrap();
-    
+
     let then_branch = parse_stmt(iter);
 
     let third;
@@ -91,7 +77,7 @@ fn parse_print_stmt(iter: &mut TokenIter) -> Stmt {
 
     while let Some(token) = iter.peek() {
         if is_expr_token(token) {
-            values.push(parse_expr(take_expr_tokens(iter)));
+            values.push(parse_expr(iter));
         } else if token == &Token::Punctuator(Punctuator::Comma) {
             continue;
         } else {
