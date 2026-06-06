@@ -3,6 +3,7 @@ pub enum Keyword {
     Let,
     If,
     Then,
+    Else,
     Input,
     Print,
     Goto,
@@ -24,9 +25,7 @@ pub enum MathOp {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum CompareOp {
-    Eq,
-    Ne,
+pub enum InequalityOp {
     Lt,
     Le,
     Gt,
@@ -53,7 +52,9 @@ pub enum Literal {
 pub enum Token {
     Keyword(Keyword),
     MathOp(MathOp),
-    CompareOp(CompareOp),
+    Eq, // Eq has two meanings depending on context. Eq was moved in Token
+    Ne, // It belongs here for consistency
+    InequalityOp(InequalityOp),
     Punctuator(Punctuator),
     Literal(Literal),
     Ident(String),
@@ -78,16 +79,16 @@ impl Token {
             "CLEAR" => Self::Keyword(Keyword::Clear),
             "LIST" => Self::Keyword(Keyword::List),
             "RUN" => Self::Keyword(Keyword::Run),
+            "=" => Self::Eq,
+            "<>" => Self::Ne,
             "+" => Self::MathOp(MathOp::Plus),
             "-" => Self::MathOp(MathOp::Minus),
             "*" => Self::MathOp(MathOp::Star),
             "/" => Self::MathOp(MathOp::Slash),
-            "=" => Self::CompareOp(CompareOp::Eq),
-            "<>" => Self::CompareOp(CompareOp::Ne),
-            "<" => Self::CompareOp(CompareOp::Lt),
-            "<=" => Self::CompareOp(CompareOp::Le),
-            ">" => Self::CompareOp(CompareOp::Gt),
-            ">=" => Self::CompareOp(CompareOp::Ge),
+            "<" => Self::InequalityOp(InequalityOp::Lt),
+            "<=" => Self::InequalityOp(InequalityOp::Le),
+            ">" => Self::InequalityOp(InequalityOp::Gt),
+            ">=" => Self::InequalityOp(InequalityOp::Ge),
             "," => Self::Punctuator(Punctuator::Comma),
             ":" => Self::Punctuator(Punctuator::Colon),
             ";" => Self::Punctuator(Punctuator::Semicolon),

@@ -1,14 +1,12 @@
-use crate::token::{MathOp, Token};
-
 mod ast;
 mod lexer;
 mod parser;
 mod token;
 
 fn main() {
-    let s = lexer::tokenize("x");
-    println!(
-        "{:?}",
-        parser::parse_expr(&mut s.into_iter().peekable(), 0)
-    )
+    let t = lexer::tokenize("if 10 = 10 then print 5 let zalupa = 10");
+    println!("{:?}", t);
+
+    let a = parser::parse(t);
+    println!("{:?}", a)
 }

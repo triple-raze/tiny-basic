@@ -39,12 +39,11 @@ fn prepare_source(source: &str) -> String {
 fn tokenize_keyword_or_ident(chars: &mut Peekable<Chars>) -> Token {
     let mut string_repr = String::new();
 
-    loop {
-        match chars.peek() {
-            Some(&ch) if ch.is_ascii_alphanumeric() => string_repr.push(chars.next().unwrap()),
-            _ => {
-                break;
-            }
+    while let Some(&ch) = chars.peek() {
+        if ch.is_ascii_alphanumeric() {
+            string_repr.push(chars.next().unwrap());
+        } else {
+            break;
         }
     }
 
@@ -83,8 +82,10 @@ fn tokenize_punctuator(chars: &mut Peekable<Chars>) -> Token {
 
 fn tokenize_str(chars: &mut Peekable<Chars>) -> Token {
     let mut string = String::new();
+
     // Skipping first quote
     chars.next();
+
     loop {
         match chars.next() {
             Some('"') => {
@@ -99,20 +100,21 @@ fn tokenize_str(chars: &mut Peekable<Chars>) -> Token {
             }
         }
     }
+
     Token::Literal(Literal::Str(string))
 }
+
 fn tokenize_num(chars: &mut Peekable<Chars>) -> Token {
     let mut string_repr = String::with_capacity(5); // Maximum of 5 characters in num
-    loop {
-        match chars.peek() {
-            Some(ch) if ch.is_ascii_digit() => {
-                string_repr.push(chars.next().unwrap());
-            }
-            _ => {
-                break;
-            }
+
+    while let Some(ch) = chars.peek() {
+        if ch.is_ascii_digit() {
+            string_repr.push(chars.next().unwrap());
+        } else {
+            break;
         }
     }
+
     match string_repr.parse::<i16>() {
         Ok(value) => return Token::Literal(Literal::Num(value)),
         Err(_) => {
@@ -122,8 +124,8 @@ fn tokenize_num(chars: &mut Peekable<Chars>) -> Token {
     };
 }
 
-pub fn tokenize(raw_source: &str) -> Vec<Token> {
-    let source = prepare_source(raw_source);
+pub fn tokenize(source: &str) -> Vec<Token> {
+    let source = prepare_source(source);
     let mut chars = source.chars().peekable();
 
     let mut tokens: Vec<Token> = Vec::new();

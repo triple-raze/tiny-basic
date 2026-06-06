@@ -1,4 +1,5 @@
-use crate::token::{Literal, MathOp};
+use crate::token::{InequalityOp, Literal, MathOp, Token};
+use either::Either;
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
@@ -7,6 +8,30 @@ pub enum Expr {
     },
     Variable {
         name: String,
+    },
+    Eq {
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
+    Ne {
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
+    Lt {
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
+    Le {
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
+    Gt {
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
+    Ge {
+        left: Box<Expr>,
+        right: Box<Expr>,
     },
     BinOp {
         op: MathOp,
@@ -29,18 +54,18 @@ pub enum Stmt {
         then_branch: Box<Stmt>,
         else_branch: Option<Box<Stmt>>,
     },
+    Print {
+        values: Vec<Expr>,
+    },
     Input {
         prompt: Option<String>,
         variables: Vec<String>,
     },
-    Print {
-        values: Vec<Expr>,
-    },
     Goto {
-        line: u16,
+        line: u8,
     },
     Gosub {
-        line: u16,
+        line: u8,
     },
     Return,
     End,
