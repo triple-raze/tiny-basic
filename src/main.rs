@@ -4,9 +4,14 @@ mod parser;
 mod token;
 
 fn main() {
-    let t = lexer::tokenize("if 10 = 10 then print 5 let zalupa = 10");
-    println!("{:?}", t);
+    let tokens = match lexer::tokenize("let x = 5") {
+        Ok(t) => t,
+        Err(msg) => {
+            eprintln!("Syntax Error: {}", msg);
+            std::process::exit(1)
+        }
+    };
 
-    let a = parser::parse(t);
-    println!("{:?}", a)
+    let a = parser::parse(tokens);
+    println!("{:?}\n", a.unwrap());
 }

@@ -50,8 +50,8 @@ pub enum Stmt {
     },
     If {
         condition: Expr,
-        then_branch: Box<Stmt>,
-        else_branch: Option<Box<Stmt>>,
+        then_branch: Box<Vec<Stmt>>,
+        else_branch: Option<Box<Vec<Stmt>>>,
     },
     Print {
         values: Vec<Expr>,

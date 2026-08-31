@@ -12,7 +12,6 @@ pub fn is_expr_token(token: &Token) -> bool {
             | Token::Ident(_)
             | Token::MathOp(_)
             | Token::Eq
-            | Token::Ne
             | Token::Punctuator(Punctuator::LParen)
             | Token::Punctuator(Punctuator::RParen)
     )

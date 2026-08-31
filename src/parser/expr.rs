@@ -1,13 +1,14 @@
+use std::borrow::Cow;
+
 use crate::parser::utils::TokenIter;
 
 use crate::ast::Expr;
 use crate::token::{InequalityOp, MathOp, Punctuator, Token};
 
 const DEFAULT_PRECEDENCE: u8 = 0;
-const EQ_NE_PRECEDENCE: u8 = 1;
-const INEQUALITY_PRECEDENCE: u8 = 2;
-const PLUS_MINUS_PRECEDENCE: u8 = 3;
-const STAR_SLASH_PRECEDENCE: u8 = 4;
+const COMPARSION_PRECEDENCE: u8 = 1;
+const PLUS_MINUS_PRECEDENCE: u8 = 2;
+const STAR_SLASH_PRECEDENCE: u8 = 3;
 
 // precedence means priority of tokens in math expression
 const fn precedence_from_math_op(op: &MathOp) -> u8 {
@@ -21,51 +22,51 @@ const fn precedence_from_math_op(op: &MathOp) -> u8 {
 const fn precedence_from_token(token: &Token) -> u8 {
     match token {
         Token::MathOp(op) => precedence_from_math_op(op),
-        Token::InequalityOp(_) => INEQUALITY_PRECEDENCE,
-        Token::Eq => EQ_NE_PRECEDENCE,
+        Token::InequalityOp(_) => COMPARSION_PRECEDENCE,
+        Token::Eq => COMPARSION_PRECEDENCE,
         _ => DEFAULT_PRECEDENCE,
     }
 }
 
 /// Parses token without left expression (unary operators, variables, literals)
-fn nud(token: Token, iter: &mut TokenIter) -> Expr {
+fn nud<'a>(token: Token, iter: &mut TokenIter) -> Result<Expr, Cow<'a, str>> {
     match token {
         Token::MathOp(op) => {
             if op != MathOp::Minus {
-                eprintln!("Syntax Error: unkown unary operator {:?}", op);
-                std::process::exit(1)
+                let err_msg = format!("unkown unary operator {:?}", op);
+                return Err(Cow::Owned(err_msg));
             };
 
-            let expr = parse_expr_with_precedence(iter, u8::MAX);
-            Expr::UnaryOp {
+            let expr = parse_expr_with_precedence(iter, u8::MAX)?;
+            Ok(Expr::UnaryOp {
                 op,
                 expr: Box::new(expr),
-            }
+            })
         }
         Token::Punctuator(Punctuator::LParen) => {
-            let expr = parse_expr_with_precedence(iter, 0);
+            let expr = parse_expr_with_precedence(iter, 0)?;
             match iter.next() {
-                Some(Token::Punctuator(Punctuator::RParen)) => expr,
+                Some(Token::Punctuator(Punctuator::RParen)) => Ok(expr),
                 token => {
-                    eprintln!("Syntax Error: ')' excepted, found {:?}", token);
-                    std::process::exit(1)
+                    let err_msg = format!("')' excepted, found {:?}", token);
+                    Err(Cow::Owned(err_msg))
                 }
             }
         }
-        Token::Ident(name) => Expr::Variable { name },
-        Token::Literal(literal) => Expr::Literal { literal },
+        Token::Ident(name) => Ok(Expr::Variable { name }),
+        Token::Literal(literal) => Ok(Expr::Literal { literal }),
         token => {
-            eprintln!("Syntax Error: unknown token {:?}", token);
-            std::process::exit(1)
+            let err_msg = format!("Syntax Error: unknown token {:?}", token);
+            Err(Cow::Owned(err_msg))
         }
     }
 }
 
 /// Parses token with left expression (binary operators)
-fn led(left: Expr, token: Token, iter: &mut TokenIter) -> Expr {
-    match token {
+fn led<'a>(left: Expr, token: Token, iter: &mut TokenIter) -> Result<Expr, Cow<'a, str>> {
+    let expr = match token {
         Token::MathOp(op) => {
-            let right = parse_expr_with_precedence(iter, precedence_from_math_op(&op) + 1);
+            let right = parse_expr_with_precedence(iter, precedence_from_math_op(&op) + 1)?;
             Expr::BinOp {
                 op,
                 left: Box::new(left),
@@ -73,22 +74,19 @@ fn led(left: Expr, token: Token, iter: &mut TokenIter) -> Expr {
             }
         }
         Token::Eq => {
-            let right = parse_expr_with_precedence(iter, EQ_NE_PRECEDENCE + 1);
+            let right = parse_expr_with_precedence(iter, COMPARSION_PRECEDENCE + 1)?;
             Expr::Eq {
                 left: Box::new(left),
                 right: Box::new(right),
             }
         }
-        Token::Ne => {
-            let right = parse_expr_with_precedence(iter, EQ_NE_PRECEDENCE + 1);
-            Expr::Ne {
-                left: Box::new(left),
-                right: Box::new(right),
-            }
-        }
         Token::InequalityOp(op) => {
-            let right = parse_expr_with_precedence(iter, INEQUALITY_PRECEDENCE + 1);
+            let right = parse_expr_with_precedence(iter, COMPARSION_PRECEDENCE + 1)?;
             match op {
+                InequalityOp::Ne => Expr::Ne {
+                    left: Box::new(left),
+                    right: Box::new(right),
+                },
                 InequalityOp::Lt => Expr::Lt {
                     left: Box::new(left),
                     right: Box::new(right),
@@ -108,16 +106,16 @@ fn led(left: Expr, token: Token, iter: &mut TokenIter) -> Expr {
             }
         }
         _ => {
-            eprintln!("Unknown LED token {:?}", token);
-            std::process::exit(1)
+            return Err(Cow::Owned(format!("unexpected token '{}'", token)))
         }
-    }
+    };
+    Ok(expr)
 }
 
 /// It is internal implementation and it should get iterator instead of vector
-fn parse_expr_with_precedence(iter: &mut TokenIter, min_precedence: u8) -> Expr {
+fn parse_expr_with_precedence<'a>(iter: &mut TokenIter, min_precedence: u8) -> Result<Expr, Cow<'a, str>> {
     let first = iter.next().unwrap();
-    let mut left = nud(first, iter);
+    let mut left = nud(first, iter)?;
 
     while let Some(token) = iter.peek() {
         if token == &Token::Punctuator(Punctuator::LParen)
@@ -132,16 +130,16 @@ fn parse_expr_with_precedence(iter: &mut TokenIter, min_precedence: u8) -> Expr 
 
         let next = iter.peek().unwrap();
         match next {
-            Token::MathOp(_) | Token::Eq | Token::Ne | Token::InequalityOp(_) => {
-                left = led(left, iter.next().unwrap(), iter)
+            Token::MathOp(_) | Token::Eq | Token::InequalityOp(_) => {
+                left = led(left, iter.next().unwrap(), iter)?
             }
             _ => break,
         }
     }
 
-    left
+    Ok(left)
 }
 
-pub fn parse_expr(iter: &mut TokenIter) -> Expr {
-    parse_expr_with_precedence(iter, 0)
+pub fn parse_expr<'a>(tokens: Vec<Token>) -> Result<Expr, Cow<'a, str>> {
+    parse_expr_with_precedence(&mut tokens.into_iter().peekable(), 0)
 }

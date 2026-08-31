@@ -1,4 +1,7 @@
-#[derive(Debug, PartialEq)]
+use strum_macros::Display;
+
+#[derive(Display, Debug, PartialEq)]
+#[strum(serialize_all = "lowercase")]
 pub enum Keyword {
     Let,
     If,
@@ -10,13 +13,10 @@ pub enum Keyword {
     Gosub,
     Return,
     End,
-    Rem,
-    Clear,
-    List,
-    Run,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Display, Debug, PartialEq)]
+#[strum(serialize_all = "lowercase")]
 pub enum MathOp {
     Plus,
     Minus,
@@ -24,15 +24,18 @@ pub enum MathOp {
     Slash,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Display, Debug, PartialEq)]
+#[strum(serialize_all = "lowercase")]
 pub enum InequalityOp {
+    Ne,
     Lt,
     Le,
     Gt,
     Ge,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Display, Debug, PartialEq)]
+#[strum(serialize_all = "lowercase")]
 pub enum Punctuator {
     Comma,
     Colon,
@@ -48,12 +51,13 @@ pub enum Literal {
     Num(i16),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Display, Debug, PartialEq)]
+#[strum(serialize_all = "lowercase")]
 pub enum Token {
     Keyword(Keyword),
+    Rem,  // Its a keyword, but its ignored after lexing. Seperating these helps keep code cleaner
     MathOp(MathOp),
-    Eq, // Eq has two meanings depending on context. Eq was moved in Token
-    Ne, // It belongs here for consistency
+    Eq,  // Eq has two meanings depending on context (comprasion and assignment)
     InequalityOp(InequalityOp),
     Punctuator(Punctuator),
     Literal(Literal),
@@ -75,16 +79,17 @@ impl Token {
             "GOSUB" => Self::Keyword(Keyword::Gosub),
             "RETURN" => Self::Keyword(Keyword::Return),
             "END" => Self::Keyword(Keyword::End),
-            "REM" => Self::Keyword(Keyword::Rem),
-            "CLEAR" => Self::Keyword(Keyword::Clear),
-            "LIST" => Self::Keyword(Keyword::List),
-            "RUN" => Self::Keyword(Keyword::Run),
-            "=" => Self::Eq,
-            "<>" => Self::Ne,
+            "REM" => Self::Rem,
+            // TODO: add these in (currently non-existent) interactive mode
+            // "CLEAR" => Self::Keyword(Keyword::Clear),
+            // "LIST" => Self::Keyword(Keyword::List),
+            // "RUN" => Self::Keyword(Keyword::Run),
             "+" => Self::MathOp(MathOp::Plus),
             "-" => Self::MathOp(MathOp::Minus),
             "*" => Self::MathOp(MathOp::Star),
             "/" => Self::MathOp(MathOp::Slash),
+            "=" => Self::Eq,
+            "<>" => Self::InequalityOp(InequalityOp::Ne),
             "<" => Self::InequalityOp(InequalityOp::Lt),
             "<=" => Self::InequalityOp(InequalityOp::Le),
             ">" => Self::InequalityOp(InequalityOp::Gt),
