@@ -43,17 +43,16 @@ pub enum Expr {
     },
 }
 
-// Using StmtKind because statement struct should have line number inside 
 #[derive(Debug, PartialEq)]
-pub enum StmtKind {
+pub enum RawStmt {
     Let {
         variable: String,
         expr: Box<Expr>,
     },
     If {
         condition: Expr,
-        then_branch: Box<Vec<Stmt>>,
-        else_branch: Option<Box<Vec<Stmt>>>,
+        then_branch: Box<RawStmt>,
+        else_branch: Option<Box<RawStmt>>,
     },
     Print {
         values: Vec<Expr>,
@@ -74,6 +73,6 @@ pub enum StmtKind {
 
 #[derive(Debug, PartialEq)]
 pub struct Stmt {
-    pub kind: StmtKind,
+    pub data: RawStmt,
     pub line_number: u8
 }

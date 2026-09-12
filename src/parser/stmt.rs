@@ -1,16 +1,16 @@
 use std::array;
 use std::borrow::Cow;
 
-use crate::ast::{Expr, StmtKind, Stmt};
+use crate::ast::{Expr, RawStmt, Stmt};
 use crate::parser::expr::parse_expr;
 use crate::parser::utils::is_expr_token;
 use crate::token::{Keyword, Literal, Punctuator, Token, TokenIter};
 
-fn parse_let_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str>> {
+fn parse_let_raw_stmt<'a>(iter: &mut TokenIter) -> Result<RawStmt, Cow<'a, str>> {
     let tokens: [Token; 3] = array::from_fn(
         |_| match iter.next() {
             Some(t) => t,
-            None => unreachable!("unexcepted EOF in parse_let_stmt_kind")
+            None => unreachable!("unexcepted EOF in parse_let_raw_stmt")
         }
     );
 
@@ -18,7 +18,7 @@ fn parse_let_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str
 
     match tokens {
         [Token::Keyword(Keyword::Let), Token::Ident(name), Token::Eq] => {
-            Ok(StmtKind::Let {
+            Ok(RawStmt::Let {
                 variable: name,
                 expr: Box::new(expr),
             })
@@ -29,29 +29,29 @@ fn parse_let_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str
         [Token::Keyword(Keyword::Let), ..] => {
             Err(Cow::Borrowed("identifier excepted"))
         }
-        _ => unreachable!("parse_let_stmt_kind should be used on let statement"),
+        _ => unreachable!("parse_let_raw_stmt should be used on let statement"),
     }
 }
 
-fn parse_if_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str>> {
+fn parse_if_raw_stmt<'a>(iter: &mut TokenIter) -> Result<RawStmt, Cow<'a, str>> {
     let if_token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_if_stmt_kind while fetching if_token")
+        None => unreachable!("unexcepted EOF in parse_if_raw_stmt while fetching if_token")
     };
     let condition = parse_expr(iter)?;
 
     let then_token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_if_stmt_kind while fetching then_token")
+        None => unreachable!("unexcepted EOF in parse_if_raw_stmt while fetching then_token")
     };
-    let then_branch = parse_stmts(iter)?;
+    let then_branch = parse_raw_stmt(iter)?;
 
     let else_token;
     let else_branch;
 
     if iter.peek() == Some(&Token::Keyword(Keyword::Else)) {
         else_token = iter.next();
-        else_branch = Some(parse_stmts(iter)?);
+        else_branch = Some(parse_raw_stmt(iter)?);
     } else {
         else_token = None;
         else_branch = None;
@@ -63,14 +63,14 @@ fn parse_if_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str>
             Token::Keyword(Keyword::Then),
             Some(Token::Keyword(Keyword::Else)),
         ) => {
-            Ok(StmtKind::If {
+            Ok(RawStmt::If {
                 condition,
                 then_branch: Box::new(then_branch),
                 else_branch: Some(Box::new(else_branch.unwrap())),
             })
         },
         (Token::Keyword(Keyword::If), Token::Keyword(Keyword::Then), None) => {
-            Ok(StmtKind::If {
+            Ok(RawStmt::If {
                 condition,
                 then_branch: Box::new(then_branch),
                 else_branch: None,
@@ -79,14 +79,14 @@ fn parse_if_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str>
         (Token::Keyword(Keyword::If), ..) => {
             Err(Cow::Borrowed("keyword 'THEN' excepted"))
         }
-        _ => unreachable!("parse_let_stmt_kind should be used on let statement"),
+        _ => unreachable!("parse_let_raw_stmt should be used on let statement"),
     }
 }
 
-fn parse_print_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str>> {
+fn parse_print_raw_stmt<'a>(iter: &mut TokenIter) -> Result<RawStmt, Cow<'a, str>> {
     let token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_print_stmt_kind")
+        None => unreachable!("unexcepted EOF in parse_print_raw_stmt")
     };
 
     let mut values: Vec<Expr> = Vec::new();
@@ -102,15 +102,15 @@ fn parse_print_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, s
     }
 
     match token {
-        Token::Keyword(Keyword::Print) => Ok(StmtKind::Print { values }),
-        _ => unreachable!("parse_print_stmt_kind should be used on print statement"),
+        Token::Keyword(Keyword::Print) => Ok(RawStmt::Print { values }),
+        _ => unreachable!("parse_print_raw_stmt should be used on print statement"),
     }
 }
 
-fn parse_input_stmt_kind(iter: &mut TokenIter) -> StmtKind {
+fn parse_input_raw_stmt(iter: &mut TokenIter) -> RawStmt {
     let token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_input_stmt_kind")
+        None => unreachable!("unexcepted EOF in parse_input_raw_stmt")
     };
 
     let prompt = match iter.next() {
@@ -127,20 +127,20 @@ fn parse_input_stmt_kind(iter: &mut TokenIter) -> StmtKind {
         .collect();
 
     match token {
-        Token::Keyword(Keyword::Input) => StmtKind::Input { prompt, variables },
-        _ => unreachable!("parse_input_stmt_kind should be used on input statement"),
+        Token::Keyword(Keyword::Input) => RawStmt::Input { prompt, variables },
+        _ => unreachable!("parse_input_raw_stmt should be used on input statement"),
     }
 }
 
-fn parse_goto_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str>> {
+fn parse_goto_raw_stmt<'a>(iter: &mut TokenIter) -> Result<RawStmt, Cow<'a, str>> {
     let token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_input_stmt_kind while fetching goto token")
+        None => unreachable!("unexcepted EOF in parse_input_raw_stmt while fetching goto token")
     };
 
     let line_token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_input_stmt_kind while fetching line number")
+        None => unreachable!("unexcepted EOF in parse_input_raw_stmt while fetching line number")
     };
 
     let line = match line_token {
@@ -151,20 +151,20 @@ fn parse_goto_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, st
         };
 
     match token {
-        Token::Keyword(Keyword::Goto) => Ok(StmtKind::Goto { line }),
-        _ => unreachable!("parse_goto_stmt_kind should be used on goto statement"),
+        Token::Keyword(Keyword::Goto) => Ok(RawStmt::Goto { line }),
+        _ => unreachable!("parse_goto_raw_stmt should be used on goto statement"),
     }
 }
 
-fn parse_gosub_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, str>> {
+fn parse_gosub_raw_stmt<'a>(iter: &mut TokenIter) -> Result<RawStmt, Cow<'a, str>> {
     let token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_gosub_stmt_kind while fetching goto token")
+        None => unreachable!("unexcepted EOF in parse_gosub_raw_stmt while fetching goto token")
     };
 
     let line_token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_gosub_stmt_kind while fetching line number")
+        None => unreachable!("unexcepted EOF in parse_gosub_raw_stmt while fetching line number")
     };
 
     let line = match line_token {
@@ -175,32 +175,55 @@ fn parse_gosub_stmt_kind<'a>(iter: &mut TokenIter) -> Result<StmtKind, Cow<'a, s
         };
 
     match token {
-        Token::Keyword(Keyword::Gosub) => Ok(StmtKind::Gosub { line }),
-        _ => unreachable!("parse_gosub_stmt_kind should be used on gosub statement"),
+        Token::Keyword(Keyword::Gosub) => Ok(RawStmt::Gosub { line }),
+        _ => unreachable!("parse_gosub_raw_stmt should be used on gosub statement"),
     }
 }
 
-fn parse_return_stmt_kind(iter: &mut TokenIter) -> StmtKind {
+fn parse_return_raw_stmt(iter: &mut TokenIter) -> RawStmt {
     let token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_return_stmt_kind")
+        None => unreachable!("unexcepted EOF in parse_return_raw_stmt")
     };
     
     match token {
-        Token::Keyword(Keyword::Return) => StmtKind::Return,
-        _ => unreachable!("parse_return_stmt_kind should be used on return statement"),
+        Token::Keyword(Keyword::Return) => RawStmt::Return,
+        _ => unreachable!("parse_return_raw_stmt should be used on return statement"),
     }
 }
 
-fn parse_end_stmt_kind(iter: &mut TokenIter) -> StmtKind {
+fn parse_end_raw_stmt(iter: &mut TokenIter) -> RawStmt {
     let token = match iter.next() {
         Some(t) => t,
-        None => unreachable!("unexcepted EOF in parse_end_stmt_kind")
+        None => unreachable!("unexcepted EOF in parse_end_raw_stmt")
     };
     
     match token {
-        Token::Keyword(Keyword::End) => StmtKind::End,
-        _ => unreachable!("parse_end_stmt_kind should be used on end statement"),
+        Token::Keyword(Keyword::End) => RawStmt::End,
+        _ => unreachable!("parse_end_raw_stmt should be used on end statement"),
+    }
+}
+
+fn parse_raw_stmt<'a>(iter: &mut TokenIter) -> Result<RawStmt, Cow<'a, str>> {
+    match iter.peek().unwrap() {
+        Token::Keyword(keyword) => {
+            let raw_stmt = match keyword  {
+                Keyword::Let => parse_let_raw_stmt(iter)?,
+                Keyword::If => parse_if_raw_stmt(iter)?,
+                Keyword::Print => parse_print_raw_stmt(iter)?,
+                Keyword::Input => parse_input_raw_stmt(iter),
+                Keyword::Goto => parse_goto_raw_stmt(iter)?,
+                Keyword::Gosub => parse_gosub_raw_stmt(iter)?,
+                Keyword::Return => parse_return_raw_stmt(iter),
+                Keyword::End => parse_end_raw_stmt(iter),
+                Keyword::Else | Keyword::Then => {
+                    let err_msg = format!("keyword '{:?}' should not be used standalone", keyword);
+                    return Err(Cow::Owned(err_msg))
+                }
+            };
+            Ok(raw_stmt)
+        },
+        _ => unreachable!("parse_raw_stmt should be used only on one statement")
     }
 }
 
@@ -211,22 +234,9 @@ fn parse_stmts<'a>(iter: &mut TokenIter) -> Result<Vec<Stmt>, Cow<'a, str>> {
 
     while let Some(token) = iter.peek() {
         match token {
-            Token::Keyword(keyword) => {
-                let stmt_kind = match keyword  {
-                    Keyword::Let => parse_let_stmt_kind(iter)?,
-                    Keyword::If => parse_if_stmt_kind(iter)?,
-                    Keyword::Print => parse_print_stmt_kind(iter)?,
-                    Keyword::Input => parse_input_stmt_kind(iter),
-                    Keyword::Goto => parse_goto_stmt_kind(iter)?,
-                    Keyword::Gosub => parse_gosub_stmt_kind(iter)?,
-                    Keyword::Return => parse_return_stmt_kind(iter),
-                    Keyword::End => parse_end_stmt_kind(iter),
-                    Keyword::Else | Keyword::Then => {
-                        let err_msg = format!("keyword '{:?}' should not be used standalone", keyword);
-                        return Err(Cow::Owned(err_msg));
-                    }
-                };
-                let stmt = Stmt { kind: stmt_kind, line_number };
+            Token::Keyword(_) => {
+                let raw_stmt = parse_raw_stmt(iter)?;
+                let stmt = Stmt { data: raw_stmt, line_number };
                 ast.push(stmt);
             },
             &Token::Literal(Literal::Num(num)) => {
