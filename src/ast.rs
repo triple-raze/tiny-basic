@@ -42,8 +42,10 @@ pub enum Expr {
         expr: Box<Expr>,
     },
 }
+
+// Using StmtKind because statement struct should have line number inside 
 #[derive(Debug, PartialEq)]
-pub enum Stmt {
+pub enum StmtKind {
     Let {
         variable: String,
         expr: Box<Expr>,
@@ -68,4 +70,10 @@ pub enum Stmt {
     },
     Return,
     End,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Stmt {
+    pub kind: StmtKind,
+    pub line_number: u8
 }

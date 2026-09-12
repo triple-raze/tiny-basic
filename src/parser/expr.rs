@@ -1,9 +1,7 @@
 use std::borrow::Cow;
 
-use crate::parser::utils::TokenIter;
-
 use crate::ast::Expr;
-use crate::token::{InequalityOp, MathOp, Punctuator, Token};
+use crate::token::{InequalityOp, MathOp, Punctuator, Token, TokenIter};
 
 const DEFAULT_PRECEDENCE: u8 = 0;
 const COMPARSION_PRECEDENCE: u8 = 1;
@@ -140,6 +138,6 @@ fn parse_expr_with_precedence<'a>(iter: &mut TokenIter, min_precedence: u8) -> R
     Ok(left)
 }
 
-pub fn parse_expr<'a>(tokens: Vec<Token>) -> Result<Expr, Cow<'a, str>> {
-    parse_expr_with_precedence(&mut tokens.into_iter().peekable(), 0)
+pub fn parse_expr<'a>(iter: &mut TokenIter) -> Result<Expr, Cow<'a, str>> {
+    parse_expr_with_precedence(iter, 0)
 }

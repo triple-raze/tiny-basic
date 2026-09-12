@@ -1,4 +1,6 @@
 use strum_macros::Display;
+use std::vec::IntoIter;
+use std::iter::Peekable;
 
 #[derive(Display, Debug, PartialEq)]
 #[strum(serialize_all = "lowercase")]
@@ -113,3 +115,5 @@ impl Token {
         Token::from_lexeme(s)
     }
 }
+
+pub type TokenIter = Peekable<IntoIter<Token>>;
